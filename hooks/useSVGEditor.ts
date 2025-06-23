@@ -95,31 +95,27 @@ export const useSVGEditor = () => {
   }, []);
 
   // Generate a unique selector for an element
-  const generateElementSelector = useCallback(
-    (element: SVGElement, index: number): string => {
-      const tagName = element.tagName.toLowerCase();
+  const generateElementSelector = useCallback((element: SVGElement): string => {
+    // First priority: Use existing ID
+    if (element.id) {
+      return `#${element.id}`;
+    }
 
-      if (element.id) {
-        return `#${element.id}`;
-      }
+    // Second priority: Create and use a unique data attribute
+    let uniqueId = element.getAttribute("data-svg-element-id");
+    if (!uniqueId) {
+      // Generate a unique ID based on element position and content
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 9);
+      uniqueId = `svg-element-${timestamp}-${random}`;
+      element.setAttribute("data-svg-element-id", uniqueId);
+    }
 
-      const parent = element.parentElement;
-      if (parent) {
-        const siblings = Array.from(parent.children).filter(
-          (child) => child.tagName.toLowerCase() === tagName
-        );
-        const position = siblings.indexOf(element) + 1;
-        const parentSelector =
-          parent.tagName.toLowerCase() === "svg"
-            ? ""
-            : `${parent.tagName.toLowerCase()} `;
-        return `${parentSelector}${tagName}:nth-of-type(${position})`;
-      }
-
-      return `${tagName}:nth-child(${index + 1})`;
-    },
-    []
-  );
+    // Use the data attribute as selector
+    const dataSelector = `[data-svg-element-id="${uniqueId}"]`;
+    // console.log("Generated data attribute selector for", element.tagName.toLowerCase(), ":", dataSelector);
+    return dataSelector;
+  }, []);
 
   // Generate a unique ID for tracking elements
   const generateElementId = useCallback(
@@ -148,13 +144,36 @@ export const useSVGEditor = () => {
       }
 
       try {
-        let element = svgElement.querySelector(selector) as SVGElement;
+        // console.log("Searching for element with selector:", selector, "in SVG:", svgElement);
 
+        let element: SVGElement | null = null;
+
+        // Try to find by selector
+        element = svgElement.querySelector(selector) as SVGElement;
+
+        // Fallback for ID selectors
         if (!element && selector.startsWith("#")) {
           const id = selector.substring(1);
           element = svgElement.getElementById(id) as SVGElement;
+          // console.log("Tried getElementById for:", id, "result:", element);
         }
 
+        // Fallback for data attribute selectors
+        if (!element && selector.includes("data-svg-element-id")) {
+          // Try to find all elements with data-svg-element-id and match
+          const allElements = svgElement.querySelectorAll(
+            "[data-svg-element-id]"
+          );
+          for (const el of allElements) {
+            if (el.matches(selector)) {
+              element = el as SVGElement;
+              break;
+            }
+          }
+          // console.log("Tried data attribute search for:", selector, "result:", element);
+        }
+
+        // console.log("findElementBySelector result:", element, "for selector:", selector);
         return element;
       } catch (error) {
         console.warn("Could not find element with selector:", selector, error);
@@ -328,13 +347,13 @@ export const useSVGEditor = () => {
 
   // Build tree structure from SVG content
   const buildTreeStructure = useCallback(() => {
-    console.log("=== DEBUG: Building tree structure ===");
+    // console.log("=== DEBUG: Building tree structure ===");
 
     const svgElement =
       svgElementRef.current || svgContainerRef.current?.querySelector("svg");
 
     if (!svgElement) {
-      console.log("No SVG element found");
+      // console.log("No SVG element found");
       return;
     }
 
@@ -355,7 +374,7 @@ export const useSVGEditor = () => {
       }
 
       const elementId = generateElementId(element, currentPath);
-      const uniqueSelector = generateElementSelector(element, index);
+      const uniqueSelector = generateElementSelector(element);
 
       return {
         tagName: element.tagName.toLowerCase(),
@@ -378,14 +397,24 @@ export const useSVGEditor = () => {
     }
 
     setTreeStructure(treeNodes);
-    console.log("Tree structure built with", treeNodes.length, "root nodes");
+    // console.log("Tree structure built with", treeNodes.length, "root nodes");
+
+    // Debug: Log all generated selectors
+    // const logTreeSelectors = (nodes: TreeNode[], depth = 0) => {
+    //   nodes.forEach((node) => {
+    //     console.log(`${"  ".repeat(depth)}${node.tagName} -> ${node.uniqueSelector}`);
+    //     logTreeSelectors(node.children, depth + 1);
+    //   });
+    // };
+    // console.log("=== All Tree Selectors ===");
+    // logTreeSelectors(treeNodes);
   }, [generateElementId, generateElementSelector, shouldIncludeElement]);
 
   // Build tree structure after SVG content is rendered
   useEffect(() => {
     if (svgContent) {
       const timer = setTimeout(() => {
-        console.log("SVG content changed, rebuilding tree...");
+        // console.log("SVG content changed, rebuilding tree...");
         buildTreeStructure();
       }, 200);
 

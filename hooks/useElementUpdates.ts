@@ -62,7 +62,7 @@ export const useElementUpdates = ({
       typeof element.className === "object" &&
       element.className.baseVal
     ) {
-      console.log("Element has CSS classes:", element.className.baseVal);
+      // console.log("Element has CSS classes:", element.className.baseVal);
     }
   }, []);
 
@@ -75,16 +75,16 @@ export const useElementUpdates = ({
     ) => {
       if (!svgContent) return;
 
-      console.log(
-        `Updating SVG content for element ${elementId}, ${property} to ${value}`
-      );
+      // console.log(
+      //   `Updating SVG content for element ${elementId}, ${property} to ${value}`
+      // );
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(svgContent, "image/svg+xml");
       const targetElement = doc.getElementById(elementId.replace("id-", ""));
 
       if (targetElement) {
-        console.log("Found element in SVG content:", targetElement);
+        // console.log("Found element in SVG content:", targetElement);
 
         targetElement.setAttribute(property, value);
 
@@ -100,7 +100,7 @@ export const useElementUpdates = ({
         const serializer = new XMLSerializer();
         const newSvgContent = serializer.serializeToString(doc);
 
-        console.log("Updating SVG content with new property");
+        // console.log("Updating SVG content with new property");
         setSvgContent(newSvgContent);
       } else {
         console.warn("Could not find element in SVG content:", elementId);
@@ -149,9 +149,9 @@ export const useElementUpdates = ({
     ) => {
       if (!svgContent) return;
 
-      console.log(
-        `Adding gradient ${gradientId} for ${property} on element ${elementId}`
-      );
+      // console.log(
+      //   `Adding gradient ${gradientId} for ${property} on element ${elementId}`
+      // );
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(svgContent, "image/svg+xml");
@@ -194,7 +194,7 @@ export const useElementUpdates = ({
       const serializer = new XMLSerializer();
       const newSvgContent = serializer.serializeToString(doc);
 
-      console.log("Updated SVG with gradient");
+      // console.log("Updated SVG with gradient");
       setSvgContent(newSvgContent);
     },
     [svgContent, setSvgContent]
@@ -226,11 +226,11 @@ export const useElementUpdates = ({
         ? getStyleableChildren(element)
         : [element];
 
-      console.log(
-        `Updating ${property} for ${targetElements.length} element(s)${
-          isGroup ? " (group)" : ""
-        }`
-      );
+      // console.log(
+      //   `Updating ${property} for ${targetElements.length} element(s)${
+      //     isGroup ? " (group)" : ""
+      //   }`
+      // );
 
       if (useGradient) {
         if (isGroup && svgContent) {
@@ -315,9 +315,9 @@ export const useElementUpdates = ({
             gradientDef
           );
         }
-        console.log(
-          `Applied ${gradientConfig[property].type} gradient to ${targetElements.length} element(s)`
-        );
+        // console.log(
+        //   `Applied ${gradientConfig[property].type} gradient to ${targetElements.length} element(s)`
+        // );
       } else if (color) {
         targetElements.forEach((targetEl) => {
           try {
@@ -369,9 +369,9 @@ export const useElementUpdates = ({
         setSelectedElement((prev: SelectedElement | null) =>
           prev ? { ...prev, [property]: color } : null
         );
-        console.log(
-          `Successfully updated ${property} to ${color} for ${targetElements.length} element(s)`
-        );
+        // console.log(
+        //   `Successfully updated ${property} to ${color} for ${targetElements.length} element(s)`
+        // );
         setTreeStructure((prev) => [...prev]);
       }
     },
@@ -415,11 +415,11 @@ export const useElementUpdates = ({
         ? getStyleableChildren(element)
         : [element];
 
-      console.log(
-        `Updating stroke width to ${width} for ${
-          targetElements.length
-        } element(s)${isGroup ? " (group)" : ""}`
-      );
+      // console.log(
+      //   `Updating stroke width to ${width} for ${
+      //     targetElements.length
+      //   } element(s)${isGroup ? " (group)" : ""}`
+      // );
 
       targetElements.forEach((targetEl) => {
         try {
@@ -479,9 +479,9 @@ export const useElementUpdates = ({
       );
       setStrokeWidth(width);
 
-      console.log(
-        `Successfully updated stroke width to ${width} for ${targetElements.length} element(s)`
-      );
+      // console.log(
+      //   `Successfully updated stroke width to ${width} for ${targetElements.length} element(s)`
+      // );
       setTreeStructure((prev) => [...prev]);
     },
     [

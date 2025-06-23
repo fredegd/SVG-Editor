@@ -157,15 +157,22 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
                                         >
                                             <div
                                                 dangerouslySetInnerHTML={{ __html: svgContent }}
-                                                onClick={onSvgElementClick}
                                                 className="max-w-full max-h-full"
                                                 style={{ pointerEvents: 'auto' }}
+                                                onClick={(e) => {
+                                                    // Only handle clicks on SVG elements
+                                                    const target = e.target as Element
+                                                    if (target && target.tagName && target.namespaceURI === 'http://www.w3.org/2000/svg') {
+                                                        // console.log("SVG element clicked:", target)
+                                                        onSvgElementClick(e)
+                                                    }
+                                                }}
                                                 ref={(el) => {
                                                     if (el) {
                                                         const svg = el.querySelector('svg')
                                                         if (svg && svgElementRef.current !== svg) {
                                                             svgElementRef.current = svg
-                                                            console.log("Direct SVG ref set:", svg)
+                                                            // console.log("Direct SVG ref set:", svg)
                                                         }
                                                     }
                                                 }}

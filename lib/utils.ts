@@ -69,10 +69,10 @@ export function downloadSvg(
     // Add XML declaration for better compatibility
     const finalSvgString = `<?xml version="1.0" encoding="UTF-8"?>\n${svgString}`;
 
-    console.log(
-      "Downloading SVG (DOM method):",
-      finalSvgString.substring(0, 200) + "..."
-    );
+    // console.log(
+    //   "Downloading SVG (DOM method):",
+    //   finalSvgString.substring(0, 200) + "..."
+    // );
 
     // Create and trigger download
     createDownloadLink(finalSvgString, filename);
@@ -110,10 +110,10 @@ function downloadSvgDirect(
     ? cleanedSvgContent
     : `<?xml version="1.0" encoding="UTF-8"?>\n${cleanedSvgContent}`;
 
-  console.log(
-    "Downloading SVG (direct method):",
-    finalSvgString.substring(0, 200) + "..."
-  );
+  // console.log(
+  //   "Downloading SVG (direct method):",
+  //   finalSvgString.substring(0, 200) + "..."
+  // );
 
   // Create and trigger download
   createDownloadLink(finalSvgString, filename);

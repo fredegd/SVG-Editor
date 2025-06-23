@@ -59,7 +59,7 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
     }
 
     return (
-        <Card className="h-1/2 bg-neutral-100/80 dark:bg-neutral-800/30">
+        <Card className=" bg-neutral-100/80 dark:bg-neutral-800/30">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Palette className="w-5 h-5" />

@@ -69,7 +69,7 @@ export default function SVGEditor() {
   // Element selection logic
   const selectElementById = useCallback(
     (elementId: string, uniqueSelector: string) => {
-      console.log("Attempting to select element:", { elementId, uniqueSelector })
+      // console.log("Attempting to select element:", { elementId, uniqueSelector })
 
       const element = findElementBySelector(uniqueSelector)
 
@@ -78,14 +78,14 @@ export default function SVGEditor() {
         return
       }
 
-      console.log("Found element:", element)
+      // console.log("Found element:", element)
 
       // Remove previous selection styling
       if (selectedElement && selectedElementSelector) {
         const prevElement = findElementBySelector(selectedElementSelector)
         if (prevElement) {
           prevElement.style.outline = ""
-          console.log("Removed outline from previous element")
+          // console.log("Removed outline from previous element")
         }
       }
 
@@ -153,7 +153,7 @@ export default function SVGEditor() {
       setStrokeColor(strokeValue && strokeValue !== "none" ? rgbToHex(strokeValue) : "#000000")
       setStrokeWidth(parseFloat(strokeWidthValue || "1"))
 
-      console.log("Element selected successfully")
+      // console.log("Element selected successfully")
     },
     [selectedElement, selectedElementSelector, findElementBySelector, setSelectedElement, setSelectedElementSelector, setFillColor, setStrokeColor, setStrokeWidth],
   )
@@ -163,10 +163,13 @@ export default function SVGEditor() {
     (event: React.MouseEvent) => {
       event.stopPropagation()
       const target = event.target as SVGElement
-      console.log("SVG element clicked:", target)
+      // console.log("SVG element clicked:", target, "tagName:", target.tagName, "namespace:", target.namespaceURI)
 
-      if (!target.tagName || target.tagName.toLowerCase() === 'div') {
-        console.log("Clicked on wrapper, not SVG element")
+      // Check if we clicked on an SVG element
+      if (!target.tagName ||
+        target.namespaceURI !== 'http://www.w3.org/2000/svg' ||
+        target.tagName.toLowerCase() === 'svg') {
+        // console.log("Clicked on SVG root or non-SVG element, ignoring")
         return
       }
 
@@ -174,21 +177,83 @@ export default function SVGEditor() {
       const findNodeByElement = (nodes: TreeNode[], element: SVGElement): TreeNode | null => {
         for (const node of nodes) {
           const nodeElement = findElementBySelector(node.uniqueSelector)
+          // console.log("Comparing node:", node.uniqueSelector, "found element:", nodeElement, "with target:", element)
+
+          if (!nodeElement) {
+            // console.log("Node element not found for selector:", node.uniqueSelector)
+            // Try children recursively
+            const childResult = findNodeByElement(node.children, element)
+            if (childResult) return childResult
+            continue
+          }
+
+          // Method 1: DOM reference equality (most reliable but can fail with re-rendered elements)
           if (nodeElement === element) {
+            // console.log("Found exact DOM reference match!")
             return node
           }
+
+          // Method 2: ID-based comparison (reliable for elements with IDs)
+          if (element.id && element.id.trim() !== '' && element.id === nodeElement.id) {
+            // console.log("Found match by ID:", element.id)
+            return node
+          }
+
+          // Method 3: Position-based comparison for elements without ID
+          if (!element.id || element.id.trim() === '') {
+            const isElementMatch = (
+              nodeElement.tagName === element.tagName &&
+              nodeElement.parentElement === element.parentElement &&
+              getElementIndex(nodeElement) === getElementIndex(element)
+            )
+
+            if (isElementMatch) {
+              // console.log("Found match by position and tag for element without ID:", node.uniqueSelector)
+              return node
+            }
+          }
+
+          // Method 4: Attribute-based comparison as fallback
+          const attributesMatch = (
+            nodeElement.tagName === element.tagName &&
+            nodeElement.getAttribute('d') === element.getAttribute('d') &&
+            nodeElement.getAttribute('fill') === element.getAttribute('fill') &&
+            nodeElement.getAttribute('stroke') === element.getAttribute('stroke') &&
+            nodeElement.getAttribute('transform') === element.getAttribute('transform')
+          )
+
+          if (attributesMatch) {
+            // console.log("Found match by attributes:", node.uniqueSelector)
+            return node
+          }
+
+          // Recursive search in children
           const childResult = findNodeByElement(node.children, element)
           if (childResult) return childResult
         }
         return null
       }
 
+      // Helper function to get element index among siblings
+      const getElementIndex = (element: Element): number => {
+        if (!element.parentElement) return 0
+        return Array.from(element.parentElement.children).indexOf(element)
+      }
+
       const treeNode = findNodeByElement(treeStructure, target)
       if (treeNode) {
-        console.log("Found matching tree node:", treeNode)
+        // console.log("Found matching tree node:", treeNode)
         selectElementById(treeNode.elementId, treeNode.uniqueSelector)
       } else {
-        console.log("No matching tree node found for clicked element")
+        // console.log("No matching tree node found for clicked element. Available tree nodes:", treeStructure.length)
+        // Try to log all available selectors for debugging
+        // const logAllSelectors = (nodes: TreeNode[], depth = 0) => {
+        //   nodes.forEach(node => {
+        //     console.log(`${'  '.repeat(depth)}${node.uniqueSelector} (${node.tagName})`)
+        //     logAllSelectors(node.children, depth + 1)
+        //   })
+        // }
+        // logAllSelectors(treeStructure)
       }
     },
     [treeStructure, selectElementById, findElementBySelector],
@@ -231,7 +296,7 @@ export default function SVGEditor() {
     const svgElement = svgContainerRef.current.querySelector("svg")
     if (!svgElement) return
 
-    console.log("Forcing SVG refresh...")
+    // console.log("Forcing SVG refresh...")
 
     const parent = svgElement.parentNode
     const nextSibling = svgElement.nextSibling
@@ -243,7 +308,7 @@ export default function SVGEditor() {
         } else {
           parent.appendChild(svgElement)
         }
-        console.log("SVG refresh complete")
+        // console.log("SVG refresh complete")
       }, 1)
     }
   }, [svgContainerRef])
@@ -295,7 +360,7 @@ export default function SVGEditor() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 text-center p-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">SVG Editor</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mini SVG Editor</h1>
           <p className="text-gray-600">Upload, edit, and download SVG files</p>
         </div>
 
