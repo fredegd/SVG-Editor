@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { ChevronRight, ChevronDown, Circle, Square, Zap, FileText } from "lucide-react"
+import { ChevronRight, ChevronDown, Circle, Square, Zap, FileText, Eye, EyeOff } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 export interface TreeNode {
@@ -23,6 +23,10 @@ interface TreeNodeComponentProps {
     findElementBySelector: (selector: string) => SVGElement | null
     isGroupElement: (element: SVGElement) => boolean
     getStyleableChildren: (element: SVGElement) => SVGElement[]
+    // Visibility functions
+    getElementVisibilityStatus: (selector: string) => boolean
+    toggleElementVisibility: (selector: string) => void
+    toggleGroupVisibility: (selector: string) => void
 }
 
 const getElementIcon = (tagName: string) => {
@@ -49,7 +53,10 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
     onToggle,
     findElementBySelector,
     isGroupElement,
-    getStyleableChildren
+    getStyleableChildren,
+    getElementVisibilityStatus,
+    toggleElementVisibility,
+    toggleGroupVisibility
 }) => {
     const hasChildren = node.children.length > 0
     const currentElement = node.uniqueSelector ? findElementBySelector(node.uniqueSelector) : null
@@ -100,7 +107,27 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
                 )}
 
                 {/* Show current colors as small indicators */}
-                <div className="flex gap-1 ml-auto">
+                <div className="flex gap-1 ml-auto">                    {/* Visibility toggle button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+
+                            if (currentElement && isGroupElement(currentElement)) {
+                                toggleGroupVisibility(node.uniqueSelector)
+                            } else {
+                                toggleElementVisibility(node.uniqueSelector)
+                            }
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        title={getElementVisibilityStatus(node.uniqueSelector) ? "Hide element" : "Show element"}
+                    >
+                        {getElementVisibilityStatus(node.uniqueSelector) ? (
+                            <Eye className="w-3 h-3 text-gray-600" />
+                        ) : (
+                            <EyeOff className="w-3 h-3 text-gray-400" />
+                        )}
+                    </button>
+
                     {currentElement && currentElement.getAttribute("fill") && currentElement.getAttribute("fill") !== "none" && (
                         <div
                             className="w-3 h-3 rounded border border-gray-300"
@@ -131,6 +158,9 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
                             findElementBySelector={findElementBySelector}
                             isGroupElement={isGroupElement}
                             getStyleableChildren={getStyleableChildren}
+                            getElementVisibilityStatus={getElementVisibilityStatus}
+                            toggleElementVisibility={toggleElementVisibility}
+                            toggleGroupVisibility={toggleGroupVisibility}
                         />
                     ))}
                 </div>

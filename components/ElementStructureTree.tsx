@@ -14,6 +14,10 @@ interface ElementStructureTreeProps {
     findElementBySelector: (selector: string) => SVGElement | null
     isGroupElement: (element: SVGElement) => boolean
     getStyleableChildren: (element: SVGElement) => SVGElement[]
+    // Visibility functions
+    getElementVisibilityStatus: (selector: string) => boolean
+    toggleElementVisibility: (selector: string) => void
+    toggleGroupVisibility: (selector: string) => void
 }
 
 export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
@@ -23,7 +27,10 @@ export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
     onTreeNodeToggle,
     findElementBySelector,
     isGroupElement,
-    getStyleableChildren
+    getStyleableChildren,
+    getElementVisibilityStatus,
+    toggleElementVisibility,
+    toggleGroupVisibility
 }) => {
     // Count total elements for display
     const countElements = useCallback((nodes: TreeNode[]): number => {
@@ -39,7 +46,7 @@ export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
     }, [onElementSelect])
 
     return (
-        <Card className="h-1/2">
+        <Card className="h-1/2 bg-neutral-100/80 dark:bg-neutral-800/30">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5" />
@@ -61,6 +68,9 @@ export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
                                     findElementBySelector={findElementBySelector}
                                     isGroupElement={isGroupElement}
                                     getStyleableChildren={getStyleableChildren}
+                                    getElementVisibilityStatus={getElementVisibilityStatus}
+                                    toggleElementVisibility={toggleElementVisibility}
+                                    toggleGroupVisibility={toggleGroupVisibility}
                                 />
                             ))}
                         </div>

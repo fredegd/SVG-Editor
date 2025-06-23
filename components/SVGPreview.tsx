@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useCallback } from "react"
-import { Download } from "lucide-react"
+import React, { useCallback, useRef } from "react"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
+import { Upload } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ZoomControls } from "./ZoomControls"
 import { FileUpload } from "./FileUpload"
+import { DownloadDropdown } from "./DownloadDropdown"
 import type { TreeNode } from "./TreeNode"
 import type { SelectedElement } from "../hooks/useSVGEditor"
 
@@ -20,7 +21,8 @@ interface SVGPreviewProps {
     onFileUpload: (content: string) => void
     onSvgElementClick: (event: React.MouseEvent) => void
     onBackgroundClick: () => void
-    onDownload: () => void
+    onDownloadSvg: () => void
+    onDownloadPng: () => void
     findElementBySelector: (selector: string) => SVGElement | null
 }
 
@@ -33,9 +35,30 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
     onFileUpload,
     onSvgElementClick,
     onBackgroundClick,
-    onDownload,
+    onDownloadSvg,
+    onDownloadPng,
     findElementBySelector
 }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleUploadClick = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    const handleFileUpload = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0]
+            if (file && file.type === "image/svg+xml") {
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    const content = e.target?.result as string
+                    onFileUpload(content)
+                }
+                reader.readAsText(file)
+            }
+        },
+        [onFileUpload],
+    )
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -69,15 +92,35 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
     }, [onFileUpload])
 
     return (
-        <Card className="xl:col-span-4 relative">
+        <Card className="xl:col-span-4 relative w-full pb-0">
+            {/* Hidden file input */}
+            <input
+                type="file"
+                accept=".svg,image/svg+xml"
+                onChange={handleFileUpload}
+                ref={fileInputRef}
+                className="hidden"
+            />
+
             <CardHeader>
-                <CardTitle>SVG Preview</CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle>SVG Preview</CardTitle>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUploadClick}
+                        className="flex items-center gap-2"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Upload SVG
+                    </Button>
+                </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative h-full flex flex-col items-center justify-center">
                 <div className="relative">
                     <div
                         ref={svgContainerRef}
-                        className="min-h-[500px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-white overflow-hidden"
+                        className="min-h-[500px] border-2 border-dashed mb-4 lg:mb-6 border-gray-300 rounded-lg flex items-center justify-center bg-white overflow-hidden"
                         onDragOver={handleDragOver}
                         onDragEnter={handleDragEnter}
                         onDragLeave={handleDragLeave}
@@ -135,19 +178,16 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
                             <FileUpload onFileUpload={onFileUpload} />
                         )}
                     </div>
-
-                    {/* Download Button - Fixed position inside SVG Preview */}
-                    {svgContent && (
-                        <Button
-                            onClick={onDownload}
-                            className="absolute bottom-2 right-2 shadow-lg"
-                            size="sm"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            Download
-                        </Button>
-                    )}
                 </div>
+                {/* Download Button - Fixed position inside SVG Preview */}
+                {svgContent && (
+                    <DownloadDropdown
+                        onDownloadSvg={onDownloadSvg}
+                        onDownloadPng={onDownloadPng}
+                        className="!absolute bottom-1 right-1"
+                    />
+                )}
+
             </CardContent>
         </Card>
     )

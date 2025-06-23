@@ -25,6 +25,9 @@ export const useSVGEditor = () => {
   const [strokeWidth, setStrokeWidth] = useState<number>(1);
   const [treeStructure, setTreeStructure] = useState<TreeNode[]>([]);
 
+  // Track visibility state for elements
+  const [hiddenElements, setHiddenElements] = useState<Set<string>>(new Set());
+
   // Gradient states
   const [isGradientMode, setIsGradientMode] = useState<{
     fill: boolean;
@@ -84,7 +87,7 @@ export const useSVGEditor = () => {
 
   // Function to check if selected element is a group with children
   const isGroupElement = useCallback((element: SVGElement): boolean => {
-    const groupTags = ["g", "svg", "defs", "clipPath", "mask"];
+    const groupTags = ["g", "svg"]; // Removed filtered elements like "defs", "clipPath", "mask"
     return (
       groupTags.includes(element.tagName.toLowerCase()) &&
       element.children.length > 0
@@ -161,6 +164,168 @@ export const useSVGEditor = () => {
     []
   );
 
+  // Track original SVG content before visibility modifications
+  const originalSVGRef = useRef<string>("");
+
+  // Update original SVG when new content is loaded (but not when we modify for visibility)
+  useEffect(() => {
+    if (svgContent && !svgContent.includes("opacity: 0")) {
+      originalSVGRef.current = svgContent;
+    }
+  }, [svgContent]);
+
+  // Apply visibility changes to SVG content when hiddenElements changes
+  useEffect(() => {
+    if (!originalSVGRef.current) return;
+
+    let modifiedSVG = originalSVGRef.current;
+
+    // Apply visibility changes to each hidden element
+    hiddenElements.forEach((selector) => {
+      // Extract the element ID from the selector (remove # prefix if present)
+      const elementId = selector.startsWith("#") ? selector.slice(1) : selector;
+
+      // Create a regex to find the element with this ID
+      const elementRegex = new RegExp(
+        `(<[^>]+id=['"]${elementId}['"][^>]*)(>)`,
+        "g"
+      );
+
+      modifiedSVG = modifiedSVG.replace(
+        elementRegex,
+        (match: string, openTag: string, closeTag: string) => {
+          // Check if style attribute already exists
+          if (openTag.includes("style=")) {
+            // Add or update opacity in existing style
+            return (
+              openTag.replace(
+                /style=['"]([^'"]*)['"]/,
+                (styleMatch: string, styles: string) => {
+                  const cleanStyles = styles
+                    .replace(/opacity:\s*[^;]*;?/, "")
+                    .trim();
+                  const newStyles = cleanStyles
+                    ? `${cleanStyles}; opacity: 0`
+                    : "opacity: 0";
+                  return `style="${newStyles}"`;
+                }
+              ) + closeTag
+            );
+          } else {
+            // Add new style attribute
+            return `${openTag} style="opacity: 0"${closeTag}`;
+          }
+        }
+      );
+    });
+
+    // Update SVG content with visibility changes
+    setSvgContent(modifiedSVG);
+  }, [hiddenElements]);
+
+  // Check if an element is visible based on hiddenElements state
+  const isElementVisible = useCallback(
+    (selector: string): boolean => {
+      return !hiddenElements.has(selector);
+    },
+    [hiddenElements]
+  );
+
+  // Toggle visibility of a single element
+  const toggleElementVisibility = useCallback((selector: string): void => {
+    setHiddenElements((prev) => {
+      const newHiddenElements = new Set(prev);
+
+      if (newHiddenElements.has(selector)) {
+        // Show element (remove from hidden set)
+        newHiddenElements.delete(selector);
+      } else {
+        // Hide element (add to hidden set)
+        newHiddenElements.add(selector);
+      }
+
+      return newHiddenElements;
+    });
+  }, []);
+
+  // Toggle visibility of a group and all its children
+  const toggleGroupVisibility = useCallback((selector: string): void => {
+    setHiddenElements((prev) => {
+      const newHiddenElements = new Set(prev);
+
+      if (newHiddenElements.has(selector)) {
+        // Show group (remove from hidden set)
+        newHiddenElements.delete(selector);
+      } else {
+        // Hide group (add to hidden set)
+        newHiddenElements.add(selector);
+      }
+
+      return newHiddenElements;
+    });
+  }, []);
+
+  // Get visibility status for an element (for UI state)
+  const getElementVisibilityStatus = useCallback(
+    (selector: string): boolean => {
+      // Always check DOM state for accurate visibility status
+      return isElementVisible(selector);
+    },
+    [isElementVisible]
+  );
+
+  // Define elements to filter out from the tree structure
+  const getFilteredElements = useCallback(() => {
+    // Elements that are not relevant for color editing
+    const irrelevantElements = [
+      "defs", // Definitions container
+      "metadata", // Metadata container
+      "title", // Title element
+      "desc", // Description element
+      "clipPath", // Clipping path
+      "mask", // Mask element
+      "pattern", // Pattern definitions
+      "marker", // Marker definitions
+      "symbol", // Symbol definitions
+      "filter", // Filter definitions
+      "feGaussianBlur", // Filter effects
+      "feOffset",
+      "feFlood",
+      "feComposite",
+      "feMorphology",
+      "feColorMatrix",
+      "style", // Style elements
+      "script", // Script elements
+      // Sodipodi and Inkscape specific elements
+      "sodipodi:namedview",
+      "inkscape:perspective",
+      "inkscape:grid",
+    ];
+
+    return irrelevantElements;
+  }, []);
+
+  // Check if an element should be included in the tree
+  const shouldIncludeElement = useCallback(
+    (element: SVGElement): boolean => {
+      const irrelevantElements = getFilteredElements();
+      const tagName = element.tagName.toLowerCase();
+
+      // Filter out irrelevant elements
+      if (irrelevantElements.includes(tagName)) {
+        return false;
+      }
+
+      // Filter out namespaced elements (sodipodi:, inkscape:, etc.)
+      if (tagName.includes(":")) {
+        return false;
+      }
+
+      return true;
+    },
+    [getFilteredElements]
+  );
+
   // Build tree structure from SVG content
   const buildTreeStructure = useCallback(() => {
     console.log("=== DEBUG: Building tree structure ===");
@@ -181,9 +346,10 @@ export const useSVGEditor = () => {
       const children: TreeNode[] = [];
       const currentPath = `${path}-${index}`;
 
+      // Filter children and only include relevant elements
       for (let i = 0; i < element.children.length; i++) {
         const child = element.children[i] as SVGElement;
-        if (child.tagName) {
+        if (child.tagName && shouldIncludeElement(child)) {
           children.push(buildTreeNode(child, currentPath, i));
         }
       }
@@ -203,16 +369,17 @@ export const useSVGEditor = () => {
     };
 
     const treeNodes: TreeNode[] = [];
+    // Filter root level children as well
     for (let i = 0; i < svgElement.children.length; i++) {
       const child = svgElement.children[i] as SVGElement;
-      if (child.tagName) {
+      if (child.tagName && shouldIncludeElement(child)) {
         treeNodes.push(buildTreeNode(child, "root", i));
       }
     }
 
     setTreeStructure(treeNodes);
     console.log("Tree structure built with", treeNodes.length, "root nodes");
-  }, [generateElementId, generateElementSelector]);
+  }, [generateElementId, generateElementSelector, shouldIncludeElement]);
 
   // Build tree structure after SVG content is rendered
   useEffect(() => {
@@ -258,5 +425,11 @@ export const useSVGEditor = () => {
     generateElementId,
     findElementBySelector,
     buildTreeStructure,
+
+    // Visibility functions
+    isElementVisible,
+    toggleElementVisibility,
+    toggleGroupVisibility,
+    getElementVisibilityStatus,
   };
 };

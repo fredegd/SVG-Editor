@@ -1,16 +1,19 @@
 "use client"
 
-import React, { useCallback } from "react"
+import React, { useCallback, useState } from "react"
 import { ElementStructureTree } from "@/components/ElementStructureTree"
 import { ElementEditor } from "@/components/ElementEditor"
 import { SVGPreview } from "@/components/SVGPreview"
+import { HamburgerButton } from "@/components/HamburgerButton"
+import { MobileSidebar } from "@/components/MobileSidebar"
 import { useSVGEditor } from "@/hooks/useSVGEditor"
 import { useElementUpdates } from "@/hooks/useElementUpdates"
-import { downloadSvg } from "@/lib/utils"
+import { downloadSvg, downloadPng } from "@/lib/utils"
 import type { TreeNode } from "@/components/TreeNode"
 import type { GradientConfig } from "@/components/GradientEditor"
 
 export default function SVGEditor() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const {
     svgContent,
     setSvgContent,
@@ -34,7 +37,11 @@ export default function SVGEditor() {
     svgElementRef,
     getStyleableChildren,
     isGroupElement,
-    findElementBySelector
+    findElementBySelector,
+    // Visibility functions
+    getElementVisibilityStatus,
+    toggleElementVisibility,
+    toggleGroupVisibility
   } = useSVGEditor()
 
   const {
@@ -209,6 +216,13 @@ export default function SVGEditor() {
     }
   }, [svgContent])
 
+  // Download PNG wrapper
+  const handleDownloadPng = useCallback(() => {
+    if (svgContent) {
+      downloadPng(svgContent)
+    }
+  }, [svgContent])
+
   // Force refresh the entire SVG
   const refreshSvg = useCallback(() => {
     if (!svgContainerRef.current) return
@@ -276,48 +290,94 @@ export default function SVGEditor() {
   }, [setGradientConfig, updateElementColorOrGradient])
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 text-center">
+        {/* Header */}
+        <div className="mb-8 text-center p-4">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">SVG Editor</h1>
           <p className="text-gray-600">Upload, edit, and download SVG files</p>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-6 gap-6">
-          {/* Left Column: Tree Structure + Element Editor */}
-          <div className="xl:col-span-2 space-y-6">
-            {/* Tree Structure */}
-            <ElementStructureTree
-              treeStructure={treeStructure}
-              selectedElementId={selectedElement?.elementId}
-              onElementSelect={selectElementById}
-              onTreeNodeToggle={toggleTreeNode}
-              findElementBySelector={findElementBySelector}
-              isGroupElement={isGroupElement}
-              getStyleableChildren={getStyleableChildren}
-            />
+        {/* Hamburger Button - nur anzeigen wenn SVG vorhanden */}
+        {svgContent && (
+          <HamburgerButton
+            isOpen={isMobileSidebarOpen}
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          />
+        )}
 
-            {/* Element Editor */}
-            <ElementEditor
-              selectedElement={selectedElement}
-              selectedElementSelector={selectedElementSelector}
-              fillColor={fillColor}
-              strokeColor={strokeColor}
-              strokeWidth={strokeWidth}
-              isGradientMode={isGradientMode}
-              gradientConfig={gradientConfig}
-              onFillColorChange={handleFillColorChange}
-              onStrokeColorChange={handleStrokeColorChange}
-              onStrokeWidthChange={updateStrokeWidth}
-              onGradientModeChange={handleGradientModeChange}
-              onGradientConfigChange={handleGradientConfigChange}
-              onDeselect={handleDeselect}
-              onRefresh={refreshSvg}
-              findElementBySelector={findElementBySelector}
-              isGroupElement={isGroupElement}
-              getStyleableChildren={getStyleableChildren}
-            />
-          </div>
+        {/* Mobile Sidebar */}
+        {svgContent && (
+          <MobileSidebar
+            isOpen={isMobileSidebarOpen}
+            onClose={() => setIsMobileSidebarOpen(false)}
+            treeStructure={treeStructure}
+            selectedElement={selectedElement}
+            selectedElementSelector={selectedElementSelector}
+            onElementSelect={selectElementById}
+            onTreeNodeToggle={toggleTreeNode}
+            findElementBySelector={findElementBySelector}
+            isGroupElement={isGroupElement}
+            getStyleableChildren={getStyleableChildren}
+            fillColor={fillColor}
+            strokeColor={strokeColor}
+            strokeWidth={strokeWidth}
+            isGradientMode={isGradientMode}
+            gradientConfig={gradientConfig}
+            onFillColorChange={handleFillColorChange}
+            onStrokeColorChange={handleStrokeColorChange}
+            onStrokeWidthChange={updateStrokeWidth}
+            onGradientModeChange={handleGradientModeChange}
+            onGradientConfigChange={handleGradientConfigChange}
+            onDeselect={handleDeselect}
+            onRefresh={refreshSvg}
+            getElementVisibilityStatus={getElementVisibilityStatus}
+            toggleElementVisibility={toggleElementVisibility}
+            toggleGroupVisibility={toggleGroupVisibility}
+          />
+        )}
+
+        {/* Desktop Layout */}
+        <div className="hidden md:grid md:grid-cols-1 xl:grid-cols-6 gap-6 p-4">
+          {/* Left Column: Tree Structure + Element Editor - nur anzeigen wenn SVG vorhanden */}
+          {svgContent && (
+            <div className="xl:col-span-2 space-y-6">
+              {/* Tree Structure */}
+              <ElementStructureTree
+                treeStructure={treeStructure}
+                selectedElementId={selectedElement?.elementId}
+                onElementSelect={selectElementById}
+                onTreeNodeToggle={toggleTreeNode}
+                findElementBySelector={findElementBySelector}
+                isGroupElement={isGroupElement}
+                getStyleableChildren={getStyleableChildren}
+                getElementVisibilityStatus={getElementVisibilityStatus}
+                toggleElementVisibility={toggleElementVisibility}
+                toggleGroupVisibility={toggleGroupVisibility}
+              />
+
+              {/* Element Editor */}
+              <ElementEditor
+                selectedElement={selectedElement}
+                selectedElementSelector={selectedElementSelector}
+                fillColor={fillColor}
+                strokeColor={strokeColor}
+                strokeWidth={strokeWidth}
+                isGradientMode={isGradientMode}
+                gradientConfig={gradientConfig}
+                onFillColorChange={handleFillColorChange}
+                onStrokeColorChange={handleStrokeColorChange}
+                onStrokeWidthChange={updateStrokeWidth}
+                onGradientModeChange={handleGradientModeChange}
+                onGradientConfigChange={handleGradientConfigChange}
+                onDeselect={handleDeselect}
+                onRefresh={refreshSvg}
+                findElementBySelector={findElementBySelector}
+                isGroupElement={isGroupElement}
+                getStyleableChildren={getStyleableChildren}
+              />
+            </div>
+          )}
 
           {/* SVG Display Area */}
           <SVGPreview
@@ -330,7 +390,27 @@ export default function SVGEditor() {
             onFileUpload={handleFileUpload}
             onSvgElementClick={handleSvgElementClick}
             onBackgroundClick={handleBackgroundClick}
-            onDownload={handleDownloadSvg}
+            onDownloadSvg={handleDownloadSvg}
+            onDownloadPng={handleDownloadPng}
+            findElementBySelector={findElementBySelector}
+          />
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden p-4">
+          {/* SVG Display Area - volle Breite auf Mobile */}
+          <SVGPreview
+            svgContent={svgContent}
+            svgContainerRef={svgContainerRef}
+            svgElementRef={svgElementRef}
+            treeStructure={treeStructure}
+            selectedElement={selectedElement}
+            selectedElementSelector={selectedElementSelector}
+            onFileUpload={handleFileUpload}
+            onSvgElementClick={handleSvgElementClick}
+            onBackgroundClick={handleBackgroundClick}
+            onDownloadSvg={handleDownloadSvg}
+            onDownloadPng={handleDownloadPng}
             findElementBySelector={findElementBySelector}
           />
         </div>
