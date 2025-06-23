@@ -112,12 +112,12 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-.noscrollbar {
+.no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.noscrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 

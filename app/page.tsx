@@ -373,6 +373,13 @@ export default function SVGEditor() {
     })
   }, [setGradientConfig, updateElementColorOrGradient])
 
+  // Count total elements in tree structure
+  const countElements = useCallback((nodes: TreeNode[]): number => {
+    return nodes.reduce((count, node) => {
+      return count + 1 + countElements(node.children)
+    }, 0)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -418,6 +425,7 @@ export default function SVGEditor() {
             getElementVisibilityStatus={getElementVisibilityStatus}
             toggleElementVisibility={toggleElementVisibility}
             toggleGroupVisibility={toggleGroupVisibility}
+            countElements={countElements}
           />
         )}
 
@@ -428,39 +436,55 @@ export default function SVGEditor() {
               {/* Left Column: Tree Structure + Element Editor - nur anzeigen wenn SVG vorhanden */}
               <div className="xl:col-span-2 space-y-6">
                 {/* Tree Structure */}
-                <ElementStructureTree
-                  treeStructure={treeStructure}
-                  selectedElementId={selectedElement?.elementId}
-                  onElementSelect={selectElementById}
-                  onTreeNodeToggle={toggleTreeNode}
-                  findElementBySelector={findElementBySelector}
-                  isGroupElement={isGroupElement}
-                  getStyleableChildren={getStyleableChildren}
-                  getElementVisibilityStatus={getElementVisibilityStatus}
-                  toggleElementVisibility={toggleElementVisibility}
-                  toggleGroupVisibility={toggleGroupVisibility}
-                />
+                <details open className="group">
+                  <summary className="cursor-pointer font-medium text-gray-900 hover:text-gray-700 transition-colors duration-200 select-none flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+                    <span className="transition-transform duration-200 group-open:rotate-90">▶</span>
+                    Element Structure ({countElements(treeStructure)} elements)
+                  </summary>
+                  <div className="mt-2">
+                    <ElementStructureTree
+                      treeStructure={treeStructure}
+                      selectedElementId={selectedElement?.elementId}
+                      onElementSelect={selectElementById}
+                      onTreeNodeToggle={toggleTreeNode}
+                      findElementBySelector={findElementBySelector}
+                      isGroupElement={isGroupElement}
+                      getStyleableChildren={getStyleableChildren}
+                      getElementVisibilityStatus={getElementVisibilityStatus}
+                      toggleElementVisibility={toggleElementVisibility}
+                      toggleGroupVisibility={toggleGroupVisibility}
+                    />
+                  </div>
+                </details>
 
                 {/* Element Editor */}
-                <ElementEditor
-                  selectedElement={selectedElement}
-                  selectedElementSelector={selectedElementSelector}
-                  fillColor={fillColor}
-                  strokeColor={strokeColor}
-                  strokeWidth={strokeWidth}
-                  isGradientMode={isGradientMode}
-                  gradientConfig={gradientConfig}
-                  onFillColorChange={handleFillColorChange}
-                  onStrokeColorChange={handleStrokeColorChange}
-                  onStrokeWidthChange={updateStrokeWidth}
-                  onGradientModeChange={handleGradientModeChange}
-                  onGradientConfigChange={handleGradientConfigChange}
-                  onDeselect={handleDeselect}
-                  onRefresh={refreshSvg}
-                  findElementBySelector={findElementBySelector}
-                  isGroupElement={isGroupElement}
-                  getStyleableChildren={getStyleableChildren}
-                />
+                <details open className="group">
+                  <summary className="cursor-pointer font-medium text-gray-900 hover:text-gray-700 transition-colors duration-200 select-none flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+                    <span className="transition-transform duration-200 group-open:rotate-90">▶</span>
+                    Element Editor{selectedElement ? ` (${selectedElement.tagName})` : ''}
+                  </summary>
+                  <div className="mt-2">
+                    <ElementEditor
+                      selectedElement={selectedElement}
+                      selectedElementSelector={selectedElementSelector}
+                      fillColor={fillColor}
+                      strokeColor={strokeColor}
+                      strokeWidth={strokeWidth}
+                      isGradientMode={isGradientMode}
+                      gradientConfig={gradientConfig}
+                      onFillColorChange={handleFillColorChange}
+                      onStrokeColorChange={handleStrokeColorChange}
+                      onStrokeWidthChange={updateStrokeWidth}
+                      onGradientModeChange={handleGradientModeChange}
+                      onGradientConfigChange={handleGradientConfigChange}
+                      onDeselect={handleDeselect}
+                      onRefresh={refreshSvg}
+                      findElementBySelector={findElementBySelector}
+                      isGroupElement={isGroupElement}
+                      getStyleableChildren={getStyleableChildren}
+                    />
+                  </div>
+                </details>
               </div>
 
               {/* SVG Display Area */}

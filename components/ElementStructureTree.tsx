@@ -47,12 +47,6 @@ export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
 
     return (
         <Card className="max-h-1/2 bg-neutral-100/80 dark:bg-neutral-800/30 overflow-scroll no-scrollbar">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Element Structure ({countElements(treeStructure)} elements)
-                </CardTitle>
-            </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[400px] w-full">
                     {treeStructure.length > 0 ? (

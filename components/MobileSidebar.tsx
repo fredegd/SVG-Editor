@@ -34,6 +34,8 @@ interface MobileSidebarProps {
     getElementVisibilityStatus: (selector: string) => boolean
     toggleElementVisibility: (selector: string) => void
     toggleGroupVisibility: (selector: string) => void
+    // Count elements function
+    countElements: (nodes: TreeNode[]) => number
 }
 
 export function MobileSidebar({
@@ -61,7 +63,8 @@ export function MobileSidebar({
     onRefresh,
     getElementVisibilityStatus,
     toggleElementVisibility,
-    toggleGroupVisibility
+    toggleGroupVisibility,
+    countElements
 }: MobileSidebarProps) {
     if (!isOpen) return null
 
@@ -92,39 +95,55 @@ export function MobileSidebar({
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     {/* Tree Structure */}
-                    <ElementStructureTree
-                        treeStructure={treeStructure}
-                        selectedElementId={selectedElement?.elementId}
-                        onElementSelect={onElementSelect}
-                        onTreeNodeToggle={onTreeNodeToggle}
-                        findElementBySelector={findElementBySelector}
-                        isGroupElement={isGroupElement}
-                        getStyleableChildren={getStyleableChildren}
-                        getElementVisibilityStatus={getElementVisibilityStatus}
-                        toggleElementVisibility={toggleElementVisibility}
-                        toggleGroupVisibility={toggleGroupVisibility}
-                    />
+                    <details open className="group">
+                        <summary className="cursor-pointer font-medium text-white hover:text-gray-200 transition-colors duration-200 select-none flex items-center gap-2 p-2 rounded-lg hover:bg-white/10">
+                            <span className="transition-transform duration-200 group-open:rotate-90">▶</span>
+                            Element Structure ({countElements(treeStructure)} elements)
+                        </summary>
+                        <div className="mt-2">
+                            <ElementStructureTree
+                                treeStructure={treeStructure}
+                                selectedElementId={selectedElement?.elementId}
+                                onElementSelect={onElementSelect}
+                                onTreeNodeToggle={onTreeNodeToggle}
+                                findElementBySelector={findElementBySelector}
+                                isGroupElement={isGroupElement}
+                                getStyleableChildren={getStyleableChildren}
+                                getElementVisibilityStatus={getElementVisibilityStatus}
+                                toggleElementVisibility={toggleElementVisibility}
+                                toggleGroupVisibility={toggleGroupVisibility}
+                            />
+                        </div>
+                    </details>
 
                     {/* Element Editor */}
-                    <ElementEditor
-                        selectedElement={selectedElement}
-                        selectedElementSelector={selectedElementSelector}
-                        fillColor={fillColor}
-                        strokeColor={strokeColor}
-                        strokeWidth={strokeWidth}
-                        isGradientMode={isGradientMode}
-                        gradientConfig={gradientConfig}
-                        onFillColorChange={onFillColorChange}
-                        onStrokeColorChange={onStrokeColorChange}
-                        onStrokeWidthChange={onStrokeWidthChange}
-                        onGradientModeChange={onGradientModeChange}
-                        onGradientConfigChange={onGradientConfigChange}
-                        onDeselect={onDeselect}
-                        onRefresh={onRefresh}
-                        findElementBySelector={findElementBySelector}
-                        isGroupElement={isGroupElement}
-                        getStyleableChildren={getStyleableChildren}
-                    />
+                    <details open className="group">
+                        <summary className="cursor-pointer font-medium text-white hover:text-gray-200 transition-colors duration-200 select-none flex items-center gap-2 p-2 rounded-lg hover:bg-white/10">
+                            <span className="transition-transform duration-200 group-open:rotate-90">▶</span>
+                            Element Editor{selectedElement ? ` (${selectedElement.tagName})` : ''}
+                        </summary>
+                        <div className="mt-2">
+                            <ElementEditor
+                                selectedElement={selectedElement}
+                                selectedElementSelector={selectedElementSelector}
+                                fillColor={fillColor}
+                                strokeColor={strokeColor}
+                                strokeWidth={strokeWidth}
+                                isGradientMode={isGradientMode}
+                                gradientConfig={gradientConfig}
+                                onFillColorChange={onFillColorChange}
+                                onStrokeColorChange={onStrokeColorChange}
+                                onStrokeWidthChange={onStrokeWidthChange}
+                                onGradientModeChange={onGradientModeChange}
+                                onGradientConfigChange={onGradientConfigChange}
+                                onDeselect={onDeselect}
+                                onRefresh={onRefresh}
+                                findElementBySelector={findElementBySelector}
+                                isGroupElement={isGroupElement}
+                                getStyleableChildren={getStyleableChildren}
+                            />
+                        </div>
+                    </details>
                 </div>
             </div>
         </>
