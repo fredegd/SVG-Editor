@@ -46,7 +46,7 @@ export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
     }, [onElementSelect])
 
     return (
-        <Card className="h-1/2 bg-neutral-100/80 dark:bg-neutral-800/30">
+        <Card className="h-1/2 bg-neutral-100/80 dark:bg-neutral-800/30 overflow-scroll no-scrollbar">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5" />
