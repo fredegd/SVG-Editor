@@ -1,103 +1,340 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import React, { useCallback } from "react"
+import { ElementStructureTree } from "@/components/ElementStructureTree"
+import { ElementEditor } from "@/components/ElementEditor"
+import { SVGPreview } from "@/components/SVGPreview"
+import { useSVGEditor } from "@/hooks/useSVGEditor"
+import { useElementUpdates } from "@/hooks/useElementUpdates"
+import { downloadSvg } from "@/lib/utils"
+import type { TreeNode } from "@/components/TreeNode"
+import type { GradientConfig } from "@/components/GradientEditor"
+
+export default function SVGEditor() {
+  const {
+    svgContent,
+    setSvgContent,
+    selectedElement,
+    setSelectedElement,
+    selectedElementSelector,
+    setSelectedElementSelector,
+    fillColor,
+    setFillColor,
+    strokeColor,
+    setStrokeColor,
+    strokeWidth,
+    setStrokeWidth,
+    treeStructure,
+    setTreeStructure,
+    isGradientMode,
+    setIsGradientMode,
+    gradientConfig,
+    setGradientConfig,
+    svgContainerRef,
+    svgElementRef,
+    getStyleableChildren,
+    isGroupElement,
+    findElementBySelector
+  } = useSVGEditor()
+
+  const {
+    updateElementColorOrGradient,
+    updateStrokeWidth,
+    handleFillColorChange,
+    handleStrokeColorChange
+  } = useElementUpdates({
+    svgContent,
+    setSvgContent,
+    selectedElement,
+    setSelectedElement,
+    selectedElementSelector,
+    gradientConfig,
+    setTreeStructure,
+    findElementBySelector,
+    isGroupElement,
+    getStyleableChildren,
+    setFillColor,
+    setStrokeColor,
+    setStrokeWidth
+  })
+
+  // Element selection logic
+  const selectElementById = useCallback(
+    (elementId: string, uniqueSelector: string) => {
+      console.log("Attempting to select element:", { elementId, uniqueSelector })
+
+      const element = findElementBySelector(uniqueSelector)
+
+      if (!element) {
+        console.error("Cannot find element with selector:", uniqueSelector)
+        return
+      }
+
+      console.log("Found element:", element)
+
+      // Remove previous selection styling
+      if (selectedElement && selectedElementSelector) {
+        const prevElement = findElementBySelector(selectedElementSelector)
+        if (prevElement) {
+          prevElement.style.outline = ""
+          console.log("Removed outline from previous element")
+        }
+      }
+
+      // Add selection styling
+      element.style.outline = "2px solid #3b82f6"
+      element.style.outlineOffset = "2px"
+
+      // Get current colors
+      const computedStyle = window.getComputedStyle(element)
+      const fillAttribute = element.getAttribute("fill")
+      const strokeAttribute = element.getAttribute("stroke")
+      const strokeWidthAttribute = element.getAttribute("stroke-width")
+
+      let fillValue = fillAttribute
+      let strokeValue = strokeAttribute
+      let strokeWidthValue = strokeWidthAttribute
+
+      if (!fillValue || fillValue === "none") {
+        const computedFill = computedStyle.getPropertyValue("fill")
+        if (computedFill && computedFill !== "none") {
+          fillValue = computedFill
+        }
+      }
+
+      if (!strokeValue || strokeValue === "none") {
+        const computedStroke = computedStyle.getPropertyValue("stroke")
+        if (computedStroke && computedStroke !== "none") {
+          strokeValue = computedStroke
+        }
+      }
+
+      if (!strokeWidthValue) {
+        const computedStrokeWidth = computedStyle.getPropertyValue("stroke-width")
+        if (computedStrokeWidth) {
+          strokeWidthValue = computedStrokeWidth
+        }
+      }
+
+      // Convert rgb values to hex for color pickers
+      const rgbToHex = (rgb: string): string => {
+        if (rgb.startsWith('#')) return rgb
+        const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
+        if (match) {
+          const r = parseInt(match[1])
+          const g = parseInt(match[2])
+          const b = parseInt(match[3])
+          return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+        }
+        return rgb
+      }
+
+      const selectedEl = {
+        elementId,
+        tagName: element.tagName.toLowerCase(),
+        id: element.id || undefined,
+        className: element.className?.baseVal || undefined,
+        fill: fillValue || "none",
+        stroke: strokeValue || "none",
+        strokeWidth: strokeWidthValue || "1",
+      }
+
+      setSelectedElement(selectedEl)
+      setSelectedElementSelector(uniqueSelector)
+      setFillColor(fillValue && fillValue !== "none" ? rgbToHex(fillValue) : "#000000")
+      setStrokeColor(strokeValue && strokeValue !== "none" ? rgbToHex(strokeValue) : "#000000")
+      setStrokeWidth(parseFloat(strokeWidthValue || "1"))
+
+      console.log("Element selected successfully")
+    },
+    [selectedElement, selectedElementSelector, findElementBySelector, setSelectedElement, setSelectedElementSelector, setFillColor, setStrokeColor, setStrokeWidth],
+  )
+
+  // SVG element click handler
+  const handleSvgElementClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation()
+      const target = event.target as SVGElement
+      console.log("SVG element clicked:", target)
+
+      if (!target.tagName || target.tagName.toLowerCase() === 'div') {
+        console.log("Clicked on wrapper, not SVG element")
+        return
+      }
+
+      // Find the tree node that corresponds to this element
+      const findNodeByElement = (nodes: TreeNode[], element: SVGElement): TreeNode | null => {
+        for (const node of nodes) {
+          const nodeElement = findElementBySelector(node.uniqueSelector)
+          if (nodeElement === element) {
+            return node
+          }
+          const childResult = findNodeByElement(node.children, element)
+          if (childResult) return childResult
+        }
+        return null
+      }
+
+      const treeNode = findNodeByElement(treeStructure, target)
+      if (treeNode) {
+        console.log("Found matching tree node:", treeNode)
+        selectElementById(treeNode.elementId, treeNode.uniqueSelector)
+      } else {
+        console.log("No matching tree node found for clicked element")
+      }
+    },
+    [treeStructure, selectElementById, findElementBySelector],
+  )
+
+  // Tree node toggle
+  const toggleTreeNode = useCallback(
+    (targetNode: TreeNode) => {
+      const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+        return nodes.map((node) => {
+          if (node.elementId === targetNode.elementId) {
+            return { ...node, isExpanded: !node.isExpanded }
+          }
+          return { ...node, children: updateNode(node.children) }
+        })
+      }
+      setTreeStructure(updateNode(treeStructure))
+    },
+    [treeStructure, setTreeStructure],
+  )
+
+  // Download SVG wrapper
+  const handleDownloadSvg = useCallback(() => {
+    if (svgContent) {
+      downloadSvg(svgContent)
+    }
+  }, [svgContent])
+
+  // Force refresh the entire SVG
+  const refreshSvg = useCallback(() => {
+    if (!svgContainerRef.current) return
+
+    const svgElement = svgContainerRef.current.querySelector("svg")
+    if (!svgElement) return
+
+    console.log("Forcing SVG refresh...")
+
+    const parent = svgElement.parentNode
+    const nextSibling = svgElement.nextSibling
+    if (parent) {
+      parent.removeChild(svgElement)
+      setTimeout(() => {
+        if (nextSibling) {
+          parent.insertBefore(svgElement, nextSibling)
+        } else {
+          parent.appendChild(svgElement)
+        }
+        console.log("SVG refresh complete")
+      }, 1)
+    }
+  }, [svgContainerRef])
+
+  // Handle file upload
+  const handleFileUpload = useCallback((content: string) => {
+    setSvgContent(content)
+    setSelectedElement(null)
+    setSelectedElementSelector("")
+  }, [setSvgContent, setSelectedElement, setSelectedElementSelector])
+
+  // Handle deselect
+  const handleDeselect = useCallback(() => {
+    if (selectedElement && selectedElementSelector) {
+      const element = findElementBySelector(selectedElementSelector)
+      if (element) {
+        element.style.outline = ""
+      }
+      setSelectedElement(null)
+      setSelectedElementSelector("")
+    }
+  }, [selectedElement, selectedElementSelector, findElementBySelector, setSelectedElement, setSelectedElementSelector])
+
+  // Handle background click (deselect)
+  const handleBackgroundClick = useCallback(() => {
+    handleDeselect()
+  }, [handleDeselect])
+
+  // Handle gradient mode changes
+  const handleGradientModeChange = useCallback((type: 'fill' | 'stroke', enabled: boolean) => {
+    setIsGradientMode(prev => ({
+      ...prev,
+      [type]: enabled
+    }))
+    updateElementColorOrGradient(type, undefined, enabled)
+  }, [setIsGradientMode, updateElementColorOrGradient])
+
+  // Handle gradient config changes
+  const handleGradientConfigChange = useCallback((type: 'fill' | 'stroke', config: GradientConfig) => {
+    setGradientConfig(prev => ({
+      ...prev,
+      [type]: config
+    }))
+    updateElementColorOrGradient(type, undefined, true)
+  }, [setGradientConfig, updateElementColorOrGradient])
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">SVG Editor</h1>
+          <p className="text-gray-600">Upload, edit, and download SVG files</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        <div className="grid grid-cols-1 xl:grid-cols-6 gap-6">
+          {/* Left Column: Tree Structure + Element Editor */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Tree Structure */}
+            <ElementStructureTree
+              treeStructure={treeStructure}
+              selectedElementId={selectedElement?.elementId}
+              onElementSelect={selectElementById}
+              onTreeNodeToggle={toggleTreeNode}
+              findElementBySelector={findElementBySelector}
+              isGroupElement={isGroupElement}
+              getStyleableChildren={getStyleableChildren}
+            />
+
+            {/* Element Editor */}
+            <ElementEditor
+              selectedElement={selectedElement}
+              selectedElementSelector={selectedElementSelector}
+              fillColor={fillColor}
+              strokeColor={strokeColor}
+              strokeWidth={strokeWidth}
+              isGradientMode={isGradientMode}
+              gradientConfig={gradientConfig}
+              onFillColorChange={handleFillColorChange}
+              onStrokeColorChange={handleStrokeColorChange}
+              onStrokeWidthChange={updateStrokeWidth}
+              onGradientModeChange={handleGradientModeChange}
+              onGradientConfigChange={handleGradientConfigChange}
+              onDeselect={handleDeselect}
+              onRefresh={refreshSvg}
+              findElementBySelector={findElementBySelector}
+              isGroupElement={isGroupElement}
+              getStyleableChildren={getStyleableChildren}
+            />
+          </div>
+
+          {/* SVG Display Area */}
+          <SVGPreview
+            svgContent={svgContent}
+            svgContainerRef={svgContainerRef}
+            svgElementRef={svgElementRef}
+            treeStructure={treeStructure}
+            selectedElement={selectedElement}
+            selectedElementSelector={selectedElementSelector}
+            onFileUpload={handleFileUpload}
+            onSvgElementClick={handleSvgElementClick}
+            onBackgroundClick={handleBackgroundClick}
+            onDownload={handleDownloadSvg}
+            findElementBySelector={findElementBySelector}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
