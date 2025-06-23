@@ -339,20 +339,38 @@ export default function SVGEditor() {
 
   // Handle gradient mode changes
   const handleGradientModeChange = useCallback((type: 'fill' | 'stroke', enabled: boolean) => {
-    setIsGradientMode(prev => ({
-      ...prev,
-      [type]: enabled
-    }))
-    updateElementColorOrGradient(type, undefined, enabled)
+    setIsGradientMode(prev => {
+      const newMode = {
+        ...prev,
+        [type]: enabled
+      }
+
+      // Use requestAnimationFrame to ensure DOM is ready for updates
+      requestAnimationFrame(() => {
+        updateElementColorOrGradient(type, undefined, enabled)
+      })
+
+      return newMode
+    })
   }, [setIsGradientMode, updateElementColorOrGradient])
 
   // Handle gradient config changes
   const handleGradientConfigChange = useCallback((type: 'fill' | 'stroke', config: GradientConfig) => {
-    setGradientConfig(prev => ({
-      ...prev,
-      [type]: config
-    }))
-    updateElementColorOrGradient(type, undefined, true)
+    // Update the state immediately
+    setGradientConfig(prev => {
+      const newConfig = {
+        ...prev,
+        [type]: config
+      }
+
+      // Apply the gradient with the new config immediately
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        updateElementColorOrGradient(type, undefined, true, newConfig)
+      })
+
+      return newConfig
+    })
   }, [setGradientConfig, updateElementColorOrGradient])
 
   return (

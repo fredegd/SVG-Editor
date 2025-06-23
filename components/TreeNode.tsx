@@ -17,7 +17,7 @@ export interface TreeNode {
 interface TreeNodeComponentProps {
     node: TreeNode
     depth: number
-    isSelected: boolean
+    selectedElementId?: string
     onSelect: (node: TreeNode) => void
     onToggle: (node: TreeNode) => void
     findElementBySelector: (selector: string) => SVGElement | null
@@ -48,7 +48,7 @@ const getElementIcon = (tagName: string) => {
 export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
     node,
     depth,
-    isSelected,
+    selectedElementId,
     onSelect,
     onToggle,
     findElementBySelector,
@@ -60,11 +60,14 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
 }) => {
     const hasChildren = node.children.length > 0
     const currentElement = node.uniqueSelector ? findElementBySelector(node.uniqueSelector) : null
+    const isSelected = selectedElementId === node.elementId
 
     return (
         <div className="select-none">
             <div
-                className={`flex items-center gap-1 py-1 px-2 rounded cursor-pointer hover:bg-gray-100 ${isSelected ? "bg-blue-100 border border-blue-300" : ""
+                className={`flex items-center gap-1 py-1 px-2 rounded cursor-pointer transition-colors ${isSelected
+                        ? "bg-blue-100 border border-blue-300 shadow-sm dark:bg-blue-900/30 dark:border-blue-500"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                 style={{ paddingLeft: `${depth * 16 + 8}px` }}
                 onClick={() => onSelect(node)}
@@ -83,9 +86,14 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
                     <div className="w-4" />
                 )}
 
-                {getElementIcon(node.tagName)}
+                <div className={`${isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
+                    {getElementIcon(node.tagName)}
+                </div>
 
-                <span className="text-sm font-medium text-gray-700">{node.tagName}</span>
+                <span className={`text-sm font-medium ${isSelected ? "text-blue-800 dark:text-blue-200" : "text-gray-700 dark:text-gray-300"
+                    }`}>
+                    {node.tagName}
+                </span>
 
                 {node.id && (
                     <Badge variant="outline" className="text-xs px-1 py-0">
@@ -152,7 +160,7 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
                             key={`${child.elementId}-${index}`}
                             node={child}
                             depth={depth + 1}
-                            isSelected={isSelected}
+                            selectedElementId={selectedElementId}
                             onSelect={onSelect}
                             onToggle={onToggle}
                             findElementBySelector={findElementBySelector}

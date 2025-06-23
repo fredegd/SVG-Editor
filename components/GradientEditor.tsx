@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -22,9 +22,27 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
     onChange,
     disabled = false
 }) => {
-    const updateConfig = (updates: Partial<GradientConfig>) => {
-        onChange({ ...config, ...updates })
-    }
+    const updateConfig = useCallback((updates: Partial<GradientConfig>) => {
+        const newConfig = { ...config, ...updates }
+        onChange(newConfig)
+    }, [config, onChange])
+
+    // Handle color changes with immediate feedback
+    const handleStartColorChange = useCallback((color: string) => {
+        updateConfig({ startColor: color })
+    }, [updateConfig])
+
+    const handleEndColorChange = useCallback((color: string) => {
+        updateConfig({ endColor: color })
+    }, [updateConfig])
+
+    const handleTypeChange = useCallback((type: 'linear' | 'radial') => {
+        updateConfig({ type })
+    }, [updateConfig])
+
+    const handleAngleChange = useCallback((angle: number) => {
+        updateConfig({ angle })
+    }, [updateConfig])
 
     return (
         <div className="space-y-2">
@@ -32,7 +50,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                 <Label className="text-xs">Type:</Label>
                 <select
                     value={config.type}
-                    onChange={(e) => updateConfig({ type: e.target.value as 'linear' | 'radial' })}
+                    onChange={(e) => handleTypeChange(e.target.value as 'linear' | 'radial')}
                     className="text-xs px-2 py-1 border rounded"
                     disabled={disabled}
                 >
@@ -46,14 +64,14 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                 <Input
                     type="color"
                     value={config.startColor}
-                    onChange={(e) => updateConfig({ startColor: e.target.value })}
+                    onChange={(e) => handleStartColorChange(e.target.value)}
                     className="w-8 h-6 p-0 border rounded cursor-pointer"
                     disabled={disabled}
                 />
                 <Input
                     type="text"
                     value={config.startColor}
-                    onChange={(e) => updateConfig({ startColor: e.target.value })}
+                    onChange={(e) => handleStartColorChange(e.target.value)}
                     className="flex-1 text-xs"
                     placeholder="#000000"
                     disabled={disabled}
@@ -65,14 +83,14 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                 <Input
                     type="color"
                     value={config.endColor}
-                    onChange={(e) => updateConfig({ endColor: e.target.value })}
+                    onChange={(e) => handleEndColorChange(e.target.value)}
                     className="w-8 h-6 p-0 border rounded cursor-pointer"
                     disabled={disabled}
                 />
                 <Input
                     type="text"
                     value={config.endColor}
-                    onChange={(e) => updateConfig({ endColor: e.target.value })}
+                    onChange={(e) => handleEndColorChange(e.target.value)}
                     className="flex-1 text-xs"
                     placeholder="#ffffff"
                     disabled={disabled}
@@ -87,7 +105,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                         min="0"
                         max="360"
                         value={config.angle}
-                        onChange={(e) => updateConfig({ angle: parseInt(e.target.value) })}
+                        onChange={(e) => handleAngleChange(parseInt(e.target.value))}
                         className="flex-1"
                         disabled={disabled}
                     />

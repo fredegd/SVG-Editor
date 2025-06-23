@@ -62,7 +62,7 @@ export const ElementStructureTree: React.FC<ElementStructureTreeProps> = ({
                                     key={`${node.elementId}-${index}`}
                                     node={node}
                                     depth={0}
-                                    isSelected={selectedElementId === node.elementId}
+                                    selectedElementId={selectedElementId}
                                     onSelect={handleElementSelect}
                                     onToggle={onTreeNodeToggle}
                                     findElementBySelector={findElementBySelector}

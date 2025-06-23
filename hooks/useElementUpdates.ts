@@ -205,7 +205,8 @@ export const useElementUpdates = ({
     (
       property: "fill" | "stroke",
       color?: string,
-      useGradient: boolean = false
+      useGradient: boolean = false,
+      customGradientConfig?: { fill: GradientConfig; stroke: GradientConfig }
     ) => {
       if (!selectedElement || !selectedElementSelector) {
         console.error("No element selected");
@@ -225,6 +226,9 @@ export const useElementUpdates = ({
       const targetElements = isGroup
         ? getStyleableChildren(element)
         : [element];
+
+      // Use the provided custom config or fall back to the current gradientConfig
+      const currentGradientConfig = customGradientConfig || gradientConfig;
 
       // console.log(
       //   `Updating ${property} for ${targetElements.length} element(s)${
@@ -250,7 +254,7 @@ export const useElementUpdates = ({
 
             targetElements.forEach((targetEl, index) => {
               if (targetEl.id) {
-                const config = gradientConfig[property];
+                const config = currentGradientConfig[property];
                 const gradientId = `${property}-gradient-${targetEl.id}-${index}`;
                 const gradientDef = createGradientDefinition(
                   gradientId,
@@ -299,7 +303,7 @@ export const useElementUpdates = ({
             setSvgContent(newSvgContent);
           }
         } else {
-          const config = gradientConfig[property];
+          const config = currentGradientConfig[property];
           const gradientId = `${property}-gradient-${selectedElement.elementId}`;
           const gradientDef = createGradientDefinition(
             gradientId,
@@ -316,7 +320,7 @@ export const useElementUpdates = ({
           );
         }
         // console.log(
-        //   `Applied ${gradientConfig[property].type} gradient to ${targetElements.length} element(s)`
+        //   `Applied ${currentGradientConfig[property].type} gradient to ${targetElements.length} element(s)`
         // );
       } else if (color) {
         targetElements.forEach((targetEl) => {

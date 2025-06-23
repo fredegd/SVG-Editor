@@ -117,10 +117,10 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
                 </div>
             </CardHeader>
             <CardContent className="relative h-full flex flex-col items-center justify-center">
-                <div className="relative w-full h-full flex flex-col items-center justify-center">
+                <div className="relative w-full h-full flex flex-col items-center ">
                     <div
                         ref={svgContainerRef}
-                        className="min-h-[500px] w-full border-2 border-dashed mb-2 lg:mb-6 border-gray-300 rounded-lg flex items-center justify-center bg-white overflow-hidden "
+                        className="min-h-[500px] w-full border-2 border-dashed mb-2 lg:mb-6 border-gray-300 rounded-lg flex items-center justify-center bg-white overflow-hidden relative "
                         onDragOver={handleDragOver}
                         onDragEnter={handleDragEnter}
                         onDragLeave={handleDragLeave}
