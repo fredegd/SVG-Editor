@@ -92,7 +92,7 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
     }, [onFileUpload])
 
     return (
-        <Card className="xl:col-span-4 relative w-full pb-0">
+        <Card className="xl:col-span-4 relative w-full pb-0 max-h-fit">
             {/* Hidden file input */}
             <input
                 type="file"
@@ -116,11 +116,11 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent className="relative h-full flex flex-col items-center justify-center">
-                <div className="relative w-full h-full flex flex-col items-center ">
+            <CardContent className="relative max-h-full flex flex-col items-center justify-center px-2 pb-4">
+                <div className=" w-full h-full flex flex-col items-center max-h-full">
                     <div
                         ref={svgContainerRef}
-                        className="min-h-[500px] w-full border-2 border-dashed mb-2 lg:mb-6 border-gray-300 rounded-lg flex items-center justify-center bg-white overflow-hidden relative "
+                        className="min-h-[500px] max-h-full w-full border-2 border-dashed mb-2 lg:mb-6  border-gray-300 rounded-lg flex items-center justify-center bg-white overflow-hidden relative "
                         onDragOver={handleDragOver}
                         onDragEnter={handleDragEnter}
                         onDragLeave={handleDragLeave}
@@ -137,7 +137,7 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({
                     >
                         {svgContent ? (
                             <TransformWrapper
-                                initialScale={1}
+                                initialScale={0.5}
                                 minScale={0.1}
                                 maxScale={10}
                                 centerOnInit={true}

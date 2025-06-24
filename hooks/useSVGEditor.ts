@@ -9,6 +9,7 @@ export interface SelectedElement {
   tagName: string;
   id?: string;
   className?: string;
+  customName?: string; // For inkscape:name or other custom name attributes
   fill?: string;
   stroke?: string;
   strokeWidth?: string;
@@ -376,10 +377,34 @@ export const useSVGEditor = () => {
       const elementId = generateElementId(element, currentPath);
       const uniqueSelector = generateElementSelector(element);
 
+      // Extract custom name attributes
+      const getCustomName = (el: SVGElement): string | undefined => {
+        // Check for inkscape:name attribute (most common)
+        const inkscapeName = el.getAttribute("inkscape:name");
+        if (inkscapeName) return inkscapeName;
+
+        // Check for inkscape:label as fallback
+        const inkscapeLabel = el.getAttribute("inkscape:label");
+        if (inkscapeLabel) return inkscapeLabel;
+
+        // Check for generic name attribute
+        const genericName = el.getAttribute("name");
+        if (genericName) return genericName;
+
+        // Check for aria-label as another fallback
+        const ariaLabel = el.getAttribute("aria-label");
+        if (ariaLabel) return ariaLabel;
+
+        return undefined;
+      };
+
+      const customName = getCustomName(element);
+
       return {
         tagName: element.tagName.toLowerCase(),
         id: element.id || undefined,
         className: element.className?.baseVal || undefined,
+        customName,
         children,
         isExpanded: true,
         elementId,

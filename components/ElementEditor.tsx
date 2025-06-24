@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Palette } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -65,6 +65,11 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                     <>
                         <div>
                             <Label className="text-sm font-medium">Selected Element</Label>
+                            {selectedElement.customName && (
+                                <div className="mt-1 text-sm font-medium text-blue-700 dark:text-blue-300">
+                                    {selectedElement.customName}
+                                </div>
+                            )}
                             <div className="mt-1 flex flex-wrap gap-1">
                                 <Badge variant="secondary">{selectedElement.tagName}</Badge>
                                 {selectedElement.id && <Badge variant="outline">#{selectedElement.id}</Badge>}

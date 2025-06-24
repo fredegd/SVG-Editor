@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="300" viewBox="0 0 300 300"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+
+    <circle cx="75" cy="75" r="40" fill="red" stroke="black" stroke-width="2" inkscape:name="Main Circle" id="circle1"/>
+
+    <rect x="150" y="50" width="80" height="60" fill="blue" stroke="green" stroke-width="3" inkscape:name="Primary Rectangle" id="rect1"/>
+
+    <path d="M 50 150 L 120 180 L 80 220 Z" fill="yellow" stroke="purple" stroke-width="2" inkscape:name="Triangle Path"/>
+
+    <g id="group1" inkscape:name="Icon Group">
+        <circle cx="200" cy="180" r="25" fill="orange" inkscape:name="Small Orange Circle"/>
+        <rect x="180" y="220" width="40" height="25" fill="pink" inkscape:name="Pink Button"/>
+    </g>
+
+    <text x="20" y="280" font-family="Arial" font-size="18" fill="black" inkscape:name="Footer Text">Inkscape Test SVG</text>
+
+    <!-- Element with inkscape:label instead of inkscape:name -->
+    <ellipse cx="250" cy="100" rx="30" ry="20" fill="green" inkscape:label="Green Ellipse"/>
+
+    <!-- Element with generic name attribute -->
+    <polygon points="50,250 80,230 110,250 95,280 65,280" fill="purple" name="Purple Star"/>
+</svg> 

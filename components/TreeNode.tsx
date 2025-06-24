@@ -8,6 +8,7 @@ export interface TreeNode {
     tagName: string
     id?: string
     className?: string
+    customName?: string  // For inkscape:name or other custom name attributes
     children: TreeNode[]
     isExpanded: boolean
     elementId: string
@@ -66,8 +67,8 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
         <div className="select-none">
             <div
                 className={`flex items-center gap-1 py-1 px-2 rounded cursor-pointer transition-colors ${isSelected
-                        ? "bg-blue-100 border border-blue-300 shadow-sm dark:bg-blue-900/30 dark:border-blue-500"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    ? "bg-blue-100 border border-blue-300 shadow-sm dark:bg-blue-900/30 dark:border-blue-500"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                 style={{ paddingLeft: `${depth * 16 + 8}px` }}
                 onClick={() => onSelect(node)}
@@ -90,10 +91,11 @@ export const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
                     {getElementIcon(node.tagName)}
                 </div>
 
-                <span className={`text-sm font-medium ${isSelected ? "text-blue-800 dark:text-blue-200" : "text-gray-700 dark:text-gray-300"
+                <span className={`text-sm font-medium ${isSelected ? "text-blue-800 dark:text-blue-200" : "text-red-700 dark:text-gray-300 "
                     }`}>
-                    {node.tagName}
+                    {node.customName || node.tagName}
                 </span>
+                ---
 
                 {node.id && (
                     <Badge variant="outline" className="text-xs px-1 py-0">
